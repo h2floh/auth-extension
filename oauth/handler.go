@@ -1,9 +1,11 @@
 package oauth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
+	"github.com/google/go-github/v50/github"
 	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/oauth2"
@@ -14,6 +16,21 @@ type Service struct {
 	confGitHub *oauth2.Config
 	confEntra  *oauth2.Config
 	cache      *cache.Cache
+}
+
+// resolveGitHubHandleViaToken retrieves the GitHub handle using the access token.
+func (s *Service) resolveGitHubHandleViaToken(accessToken string) string {
+	client := github.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: accessToken},
+	)))
+
+	user, _, err := client.Users.Get(context.Background(), "")
+	if err != nil {
+		fmt.Printf("error retrieving GitHub user: %v", err)
+		return ""
+	}
+
+	return user.GetLogin()
 }
 
 func NewService(gitHubClientID, gitHubClientSecret, entraClientId, entraClientSecret, entraTenantId, callbackGitHub, callbackEntra string, cache *cache.Cache) *Service {
@@ -96,7 +113,7 @@ func (s *Service) PostAuthGitHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = s.confGitHub.Exchange(r.Context(), code)
+	githubToken, err := s.confGitHub.Exchange(r.Context(), code)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(fmt.Sprintf("error exchange code for token: %v", err)))
@@ -104,8 +121,8 @@ func (s *Service) PostAuthGitHub(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Response contains an GitHub access token
-	// TODO retrieve user id/information (via oktokit sdk?!)
-	github_handle := "github_handle"
+	// TODO retrieve user id/information (via go-github)
+	github_handle := s.resolveGitHubHandleViaToken(githubToken.AccessToken) //"github_handle"
 
 	// Now do the same thing for Entra Authentication
 	s.PreAuthEntra(github_handle, w, r) // <- chain github id/information
@@ -181,18 +198,18 @@ func (s *Service) PostAuthEntra(w http.ResponseWriter, r *http.Request) {
 	// map and store token in cache
 	s.cache.Set(githubIdCookie.Value, entraToken.AccessToken, cache.DefaultExpiration)
 
-	s.TestCache()
+	s.TestCache(githubIdCookie.Value)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("All done!  Please return to the app"))
 }
 
-func (s *Service) TestCache() {
+func (s *Service) TestCache(item string) {
 	// Debug out the values of the entraToken
-	result, found := s.cache.Get("github_handle")
+	result, found := s.cache.Get(item)
 	if found {
-		fmt.Printf("Cache hit: %s\n", result)
+		fmt.Printf("Cache hit for %s: %s\n", item, result)
 	} else {
-		fmt.Println("Cache miss")
+		fmt.Printf("Cache miss for %s\n", item)
 	}
 }
