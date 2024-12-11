@@ -13,8 +13,11 @@ This project is a Go application that demonstrates how to use retrieval augmente
 
 ```
 export PORT=8080
-export CLIENT_ID=Iv1.0ae52273ad3193eb // the application id
-export CLIENT_SECRET="your_client_secret" // generate a new client secret for your application
+export GITHUB_CLIENT_ID=Iv1.0ae52273ad3193eb // the application id from GitHub
+export GITHUB_CLIENT_SECRET="your_client_secret" // generate a new client secret for your GitHub application
+export ENTRA_CLIENT_ID=// the application id from EntraID
+export ENTRA_TENTANT_ID= // the tenant id from EntraID
+export ENTRA_CLIENT_SECRET="your_client_secret" // generate a new client secret for your EntraId application
 export FQDN=https://6de513480979.ngrok.app // use ngrok to expose a url
 ```
 

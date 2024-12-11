@@ -34,16 +34,24 @@ func run() error {
 		return fmt.Errorf("error fetching config: %w", err)
 	}
 
-	me, err := url.Parse(config.FQDN)
+	callbackFromGitHub, err := url.Parse(config.FQDN)
 	if err != nil {
 		return fmt.Errorf("unable to parse HOST environment variable: %w", err)
 	}
 
-	me.Path = "auth/callback"
+	callbackFromGitHub.Path = "auth/callback/github"
 
-	oauthService := oauth.NewService(config.ClientID, config.ClientSecret, me.String())
-	http.HandleFunc("/auth/authorization", oauthService.PreAuth)
-	http.HandleFunc("/auth/callback", oauthService.PostAuth)
+	callbackFromEntra, err := url.Parse(config.FQDN)
+	if err != nil {
+		return fmt.Errorf("unable to parse HOST environment variable: %w", err)
+	}
+
+	callbackFromEntra.Path = "auth/callback/entra"
+
+	oauthService := oauth.NewService(config.GitHubClientID, config.GitHubClientSecret, config.EntraIdClientID, config.EntraIdClientSecret, config.EntraIdTenantId, callbackFromGitHub.String(), callbackFromEntra.String())
+	http.HandleFunc("/auth/authorization", oauthService.PreAuthGitHub)
+	http.HandleFunc("/auth/callback/github", oauthService.PostAuthGitHub)
+	http.HandleFunc("/auth/callback/entra", oauthService.PostAuthEntra)
 
 	agentService := agent.NewService(pubKey)
 
