@@ -56,6 +56,7 @@ func run() error {
 	agentService := agent.NewService(pubKey)
 
 	http.HandleFunc("/agent", agentService.ChatCompletion)
+	http.HandleFunc("/", agentService.HelloWorld)
 
 	fmt.Println("Listening on port", config.Port)
 	return http.ListenAndServe(":"+config.Port, nil)

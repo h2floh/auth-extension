@@ -191,6 +191,11 @@ func (s *Service) generateCompletion(ctx context.Context, integrationID, apiToke
 	return nil
 }
 
+func (s *Service) HelloWorld(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Hello, World!"))
+}
+
 // asn1Signature is a struct for ASN.1 serializing/parsing signatures.
 type asn1Signature struct {
 	R *big.Int

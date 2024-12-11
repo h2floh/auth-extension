@@ -36,7 +36,7 @@ const (
 	entraIdClientSecretEnv = "ENTRA_CLIENT_SECRET"
 	fqdnEnv                = "FQDN"
 	gitHubClientIdEnv      = "GITHUB_CLIENT_ID"
-	gitHubClientSecretEnv  = "GITHUB_SECRET"
+	gitHubClientSecretEnv  = "GITHUB_CLIENT_SECRET"
 )
 
 func New() (*Info, error) {
