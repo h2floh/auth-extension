@@ -10,17 +10,31 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/copilot-extensions/rag-extension/agent"
 	"github.com/copilot-extensions/rag-extension/config"
 	"github.com/copilot-extensions/rag-extension/oauth"
+
+	"github.com/patrickmn/go-cache"
 )
 
+var memCache *cache.Cache
+
 func main() {
+
+	initCache()
+
 	if err := run(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func initCache() {
+	// Create a cache with a default expiration time of 5 minutes, and which
+	// purges expired items every 10 minutes
+	memCache = cache.New(5*time.Minute, 10*time.Minute)
 }
 
 func run() error {
@@ -48,12 +62,12 @@ func run() error {
 
 	callbackFromEntra.Path = "auth/callback/entra"
 
-	oauthService := oauth.NewService(config.GitHubClientID, config.GitHubClientSecret, config.EntraIdClientID, config.EntraIdClientSecret, config.EntraIdTenantId, callbackFromGitHub.String(), callbackFromEntra.String())
+	oauthService := oauth.NewService(config.GitHubClientID, config.GitHubClientSecret, config.EntraIdClientID, config.EntraIdClientSecret, config.EntraIdTenantId, callbackFromGitHub.String(), callbackFromEntra.String(), memCache)
 	http.HandleFunc("/auth/authorization", oauthService.PreAuthGitHub)
 	http.HandleFunc("/auth/callback/github", oauthService.PostAuthGitHub)
 	http.HandleFunc("/auth/callback/entra", oauthService.PostAuthEntra)
 
-	agentService := agent.NewService(pubKey)
+	agentService := agent.NewService(pubKey, memCache)
 
 	http.HandleFunc("/agent", agentService.ChatCompletion)
 	http.HandleFunc("/", agentService.HelloWorld)

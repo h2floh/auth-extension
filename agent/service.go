@@ -20,21 +20,23 @@ import (
 
 	"github.com/copilot-extensions/rag-extension/copilot"
 	"github.com/copilot-extensions/rag-extension/embedding"
+	"github.com/patrickmn/go-cache"
 )
 
 // Service provides and endpoint for this agent to perform chat completions
 type Service struct {
 	pubKey *ecdsa.PublicKey
-
+	cache  *cache.Cache
 	// Singleton
 	datasets     []*embedding.Dataset
 	datasetsInit *sync.Once
 }
 
-func NewService(pubKey *ecdsa.PublicKey) *Service {
+func NewService(pubKey *ecdsa.PublicKey, cache *cache.Cache) *Service {
 	return &Service{
 		pubKey:       pubKey,
 		datasetsInit: &sync.Once{},
+		cache:        cache,
 	}
 }
 
