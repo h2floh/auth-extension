@@ -20,21 +20,25 @@ import (
 
 	"github.com/copilot-extensions/rag-extension/copilot"
 	"github.com/copilot-extensions/rag-extension/embedding"
+	"github.com/google/go-github/v50/github"
+	"github.com/patrickmn/go-cache"
+	"golang.org/x/oauth2"
 )
 
 // Service provides and endpoint for this agent to perform chat completions
 type Service struct {
 	pubKey *ecdsa.PublicKey
-
+	cache  *cache.Cache
 	// Singleton
 	datasets     []*embedding.Dataset
 	datasetsInit *sync.Once
 }
 
-func NewService(pubKey *ecdsa.PublicKey) *Service {
+func NewService(pubKey *ecdsa.PublicKey, cache *cache.Cache) *Service {
 	return &Service{
 		pubKey:       pubKey,
 		datasetsInit: &sync.Once{},
+		cache:        cache,
 	}
 }
 
@@ -63,6 +67,22 @@ func (s *Service) ChatCompletion(w http.ResponseWriter, r *http.Request) {
 
 	apiToken := r.Header.Get("X-GitHub-Token")
 	integrationID := r.Header.Get("Copilot-Integration-Id")
+
+	// retrieve GitHub handle
+	handle := s.resolveGitHubHandleViaToken(apiToken)
+	fmt.Printf("GitHub handle: %s\n", handle)
+	entraToken, found := s.cache.Get(handle)
+
+	// retrieve Entra token for GitHub Handle
+	if found {
+		fmt.Printf("Cache hit for %s: %s\n", handle, entraToken)
+	} else {
+		fmt.Printf("Cache miss for %s\n", handle)
+	}
+	//
+	// Now use entra token to authenticate against external API
+	// ...
+	//
 
 	var req *copilot.ChatRequest
 	if err := json.Unmarshal(body, &req); err != nil {
@@ -189,6 +209,26 @@ func (s *Service) generateCompletion(ctx context.Context, integrationID, apiToke
 	}
 
 	return nil
+}
+
+// resolveGitHubHandleViaToken retrieves the GitHub handle using the access token.
+func (s *Service) resolveGitHubHandleViaToken(accessToken string) string {
+	client := github.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: accessToken},
+	)))
+
+	user, _, err := client.Users.Get(context.Background(), "")
+	if err != nil {
+		fmt.Printf("error retrieving GitHub user: %v", err)
+		return ""
+	}
+
+	return user.GetLogin()
+}
+
+func (s *Service) HelloWorld(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Hello, World!"))
 }
 
 // asn1Signature is a struct for ASN.1 serializing/parsing signatures.

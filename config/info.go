@@ -14,17 +14,29 @@ type Info struct {
 	FQDN string
 
 	// ClientID comes from your configured GitHub app
-	ClientID string
+	GitHubClientID string
 
 	// ClientSecret comes from your configured GitHub app
-	ClientSecret string
+	GitHubClientSecret string
+
+	// ClientID comes from your configured EntraId app
+	EntraIdClientID string
+
+	// ClientSecret comes from your configured EntraId app
+	EntraIdClientSecret string
+
+	// TenantId comes from your configured EntraId app
+	EntraIdTenantId string
 }
 
 const (
-	portEnv         = "PORT"
-	clientIdEnv     = "CLIENT_ID"
-	clientSecretEnv = "CLIENT_SECRET"
-	fqdnEnv         = "FQDN"
+	portEnv                = "PORT"
+	entraIdClientIdEnv     = "ENTRA_CLIENT_ID"
+	entraIdTenantEnv       = "ENTRA_TENANT_ID"
+	entraIdClientSecretEnv = "ENTRA_CLIENT_SECRET"
+	fqdnEnv                = "FQDN"
+	gitHubClientIdEnv      = "GITHUB_CLIENT_ID"
+	gitHubClientSecretEnv  = "GITHUB_CLIENT_SECRET"
 )
 
 func New() (*Info, error) {
@@ -38,20 +50,38 @@ func New() (*Info, error) {
 		return nil, fmt.Errorf("%s environment variable required", fqdnEnv)
 	}
 
-	clientID := os.Getenv(clientIdEnv)
-	if clientID == "" {
-		return nil, fmt.Errorf("%s environment variable required", clientIdEnv)
+	entraIdClientID := os.Getenv(entraIdClientIdEnv)
+	if entraIdClientID == "" {
+		return nil, fmt.Errorf("%s environment variable required", entraIdClientIdEnv)
 	}
 
-	clientSecret := os.Getenv(clientSecretEnv)
-	if clientSecret == "" {
-		return nil, fmt.Errorf("%s environment variable required", clientSecretEnv)
+	entraIdClientSecret := os.Getenv(entraIdClientSecretEnv)
+	if entraIdClientSecret == "" {
+		return nil, fmt.Errorf("%s environment variable required", entraIdClientSecretEnv)
+	}
+
+	entraIdTenantId := os.Getenv(entraIdTenantEnv)
+	if entraIdTenantId == "" {
+		return nil, fmt.Errorf("%s environment variable required", entraIdTenantEnv)
+	}
+
+	gitHubClientID := os.Getenv(gitHubClientIdEnv)
+	if gitHubClientID == "" {
+		return nil, fmt.Errorf("%s environment variable required", gitHubClientIdEnv)
+	}
+
+	gitHubClientSecret := os.Getenv(gitHubClientSecretEnv)
+	if gitHubClientSecret == "" {
+		return nil, fmt.Errorf("%s environment variable required", gitHubClientSecretEnv)
 	}
 
 	return &Info{
-		Port:         port,
-		FQDN:         fqdn,
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
+		Port:                port,
+		FQDN:                fqdn,
+		GitHubClientID:      gitHubClientID,
+		GitHubClientSecret:  gitHubClientSecret,
+		EntraIdClientID:     entraIdClientID,
+		EntraIdClientSecret: entraIdClientSecret,
+		EntraIdTenantId:     entraIdTenantId,
 	}, nil
 }
